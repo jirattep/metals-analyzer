@@ -379,7 +379,7 @@ def call_claude(api_key, system_prompt, user_prompt, max_tokens=1000, timeout=20
         "content-type": "application/json",
     }
     body = {
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-5",
         "max_tokens": max_tokens,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
