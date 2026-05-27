@@ -212,23 +212,58 @@ def market_structure(df, lookback=5):
 # ============================================================
 # DATA FETCHING
 # ============================================================
-@st.cache_data(ttl=60, show_spinner=False)
-def fetch_scalp_data(yf_symbol):
-    """ดึงข้อมูล M1, M5, M15 สำหรับ scalping"""
-    try:
-        m1 = yf.download(yf_symbol, interval="1m", period="1d",
-                         progress=False, auto_adjust=False)
-        m5 = yf.download(yf_symbol, interval="5m", period="5d",
-                         progress=False, auto_adjust=False)
-        m15 = yf.download(yf_symbol, interval="15m", period="5d",
-                          progress=False, auto_adjust=False)
-        for df in [m1, m5, m15]:
+def _download_retry(symbol, interval, period, retries=3):
+    """ดาวน์โหลดพร้อม retry"""
+    import time
+    for attempt in range(retries):
+        try:
+            df = yf.download(symbol, interval=interval, period=period,
+                             progress=False, auto_adjust=False)
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
-        return m1, m5, m15
-    except Exception as e:
-        st.error(f"yfinance error: {e}")
+            if df is not None and len(df) > 5:
+                return df
+        except Exception:
+            pass
+        if attempt < retries - 1:
+            time.sleep(1.5)
+    return None
+
+
+def _resample(df, rule):
+    """แปลง timeframe เช่น M5 -> M15"""
+    if df is None or len(df) == 0:
+        return None
+    agg = {'Open': 'first', 'High': 'max', 'Low': 'min',
+           'Close': 'last', 'Volume': 'sum'}
+    cols = {k: v for k, v in agg.items() if k in df.columns}
+    out = df.resample(rule).agg(cols).dropna()
+    return out
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_scalp_data(yf_symbol):
+    """ดึงข้อมูล M1, M5, M15 — มี fallback หลายชั้น"""
+    # M5 เป็นแกนหลัก (เสถียรสุด)
+    m5 = _download_retry(yf_symbol, "5m", "5d")
+    if m5 is None or len(m5) < 30:
         return None, None, None
+
+    # M1 — ลองดึง ถ้าไม่ได้ใช้ M5 แทน (จะแม่นน้อยลงนิด)
+    m1 = _download_retry(yf_symbol, "1m", "1d", retries=2)
+    if m1 is None or len(m1) < 30:
+        m1 = m5  # fallback: ใช้ M5 เป็น M1
+
+    # M15 — ลองดึง ถ้าไม่ได้ resample จาก M5
+    m15 = _download_retry(yf_symbol, "15m", "5d", retries=2)
+    if m15 is None or len(m15) < 30:
+        m15_resampled = _resample(m5, '15min')
+        if m15_resampled is not None and len(m15_resampled) >= 30:
+            m15 = m15_resampled
+        else:
+            m15 = m5  # fallback สุดท้าย
+
+    return m1, m5, m15
 
 
 # ============================================================
@@ -699,9 +734,22 @@ def main():
     progress = st.progress(0, text="📊 Fetching M1/M5/M15...")
     m1, m5, m15 = fetch_scalp_data(cfg['yf_symbol'])
 
-    if m1 is None or m5 is None or m15 is None or len(m1) < 30 or len(m5) < 30:
-        st.error("❌ ดึงข้อมูลไม่ได้ — ลองใหม่อีกครั้ง (Yahoo อาจ rate limit)")
+    if m5 is None or len(m5) < 30:
+        progress.empty()
+        st.error("❌ Yahoo Finance ดึงข้อมูลไม่ได้ชั่วคราว")
+        st.info("""
+        **วิธีแก้:**
+        1. รอ 30-60 วินาที แล้วกด **SCAN** ใหม่ (Yahoo rate limit)
+        2. หรือกดปุ่มด้านล่างเพื่อล้าง cache แล้วลองใหม่
+        3. ช่วงตลาดปิด (เสาร์-อาทิตย์) ข้อมูลอาจไม่อัปเดต
+        """)
+        if st.button("🔄 ล้าง Cache แล้วลองใหม่"):
+            st.cache_data.clear()
+            st.rerun()
         return
+
+    if m1 is m5:
+        st.toast("⚠ M1 ไม่พร้อม — ใช้ M5 แทน (ผลวิเคราะห์ยังใช้ได้)", icon="⚠️")
 
     progress.progress(60, text="🧮 Analyzing price action...")
     settings = {'lot_size': lot_size, 'ounces_per_lot': ounces_per_lot,
