@@ -1,12 +1,12 @@
 """
 SCALP ANALYZER - Pure Price Action Edition
 ============================================
-XAU/USD และ XAG/USD Scalping Analyzer (5-30 นาที/ไม้)
+XAU/USD และ XAG/USD Scalping Analyzer (5-15 นาที/ไม้)
 
 หลักการ:
 - กราฟล้วน 100% — ไม่ใช้ข่าว, ไม่ใช้ sentiment
 - เน้น M1/M5/M15 (scalping timeframes)
-- Time-to-Target — ประเมินว่าราคาถึง TP ใน 30 นาทีไหม
+- Time-to-Target — ประเมินว่าราคาถึง TP ใน 15 นาทีไหม
 - Pullback entry — เข้าตอนราคาย่อ ไม่ไล่ราคา
 - EMA Ribbon + VWAP + Micro structure
 
@@ -63,57 +63,214 @@ def inject_css(instrument_key):
     cfg = INSTRUMENTS[instrument_key]
     color = cfg["color_primary"]
     color_dark = cfg["color_secondary"]
-    bg = "#0a0705" if instrument_key == "XAUUSD" else "#010409"
-    border = "#3d2f1f" if instrument_key == "XAUUSD" else "#30363d"
-    text = "#f5e6d3" if instrument_key == "XAUUSD" else "#e6edf3"
-    muted = "#8b7355" if instrument_key == "XAUUSD" else "#8b949e"
+
+    if instrument_key == "XAUUSD":
+        bg = "#0d0a05"
+        bg2 = "#1a1308"
+        border = "#4a3a1f"
+        text = "#f7ecd9"
+        muted = "#9c8560"
+        glow_rgb = "255, 215, 0"
+        accent_soft = "#3d2f15"
+    else:
+        bg = "#04080c"
+        bg2 = "#0a1118"
+        border = "#1f3a35"
+        text = "#e8f5f0"
+        muted = "#7da99c"
+        glow_rgb = "0, 255, 159"
+        accent_soft = "#0d2a24"
 
     st.markdown(f"""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@700;800&display=swap');
-        .stApp {{ background: radial-gradient(ellipse at top, {bg} 0%, #000 100%); }}
-        html, body, [class*="css"] {{ font-family: 'JetBrains Mono', monospace !important; color: {text}; }}
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@600;700;800&family=Orbitron:wght@700;900&display=swap');
+
+        /* ===== BACKGROUND ===== */
+        .stApp {{
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba({glow_rgb}, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba({glow_rgb}, 0.06) 0%, transparent 50%),
+                linear-gradient(180deg, {bg} 0%, #000 100%);
+        }}
+        html, body, [class*="css"] {{
+            font-family: 'JetBrains Mono', monospace !important;
+            color: {text};
+        }}
         h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; color: {color} !important; }}
+
+        /* ===== HIDE STREAMLIT BRANDING ===== */
+        #MainMenu {{visibility: hidden;}}
+        footer {{visibility: hidden;}}
+        header {{visibility: hidden;}}
+
+        /* ===== BUTTON ===== */
         .stButton > button {{
             background: linear-gradient(135deg, {color} 0%, {color_dark} 100%);
-            color: #010409; border: none; padding: 14px 24px;
-            font-family: 'JetBrains Mono', monospace; font-weight: 700;
-            letter-spacing: 0.2em; text-transform: uppercase;
-            box-shadow: 0 0 20px {color}50; width: 100%;
+            color: #000; border: none; padding: 16px 24px;
+            font-family: 'Syne', sans-serif; font-weight: 800;
+            font-size: 15px; letter-spacing: 0.25em; text-transform: uppercase;
+            border-radius: 2px;
+            box-shadow: 0 0 30px rgba({glow_rgb}, 0.4),
+                        inset 0 1px 0 rgba(255,255,255,0.3);
+            width: 100%; transition: all 0.25s ease;
+            position: relative; overflow: hidden;
         }}
-        .stButton > button:hover {{ box-shadow: 0 0 30px {color}80; }}
+        .stButton > button:hover {{
+            box-shadow: 0 0 50px rgba({glow_rgb}, 0.7),
+                        inset 0 1px 0 rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }}
+        .stButton > button:active {{ transform: translateY(0); }}
+
+        /* ===== TITLE ===== */
         .main-title {{
-            font-family: 'Syne', sans-serif !important;
-            font-size: 48px !important; font-weight: 800 !important;
+            font-family: 'Orbitron', sans-serif !important;
+            font-size: 52px !important; font-weight: 900 !important;
             margin: 0 !important; line-height: 1 !important;
-            background: linear-gradient(135deg, {color} 0%, {color_dark} 100%);
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, #fff 0%, {color} 40%, {color_dark} 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 20px {color}40);
+            filter: drop-shadow(0 0 25px rgba({glow_rgb}, 0.5));
         }}
+
+        /* ===== VERDICT ===== */
         .verdict-buy {{
-            font-family: 'Syne', sans-serif; font-size: 64px; font-weight: 800;
-            color: {color}; text-shadow: 0 0 30px {color}80; margin: 0;
+            font-family: 'Orbitron', sans-serif; font-size: 60px; font-weight: 900;
+            color: {color}; text-shadow: 0 0 40px rgba({glow_rgb}, 0.8); margin: 0;
+            letter-spacing: 0.02em;
         }}
         .verdict-sell {{
-            font-family: 'Syne', sans-serif; font-size: 64px; font-weight: 800;
-            color: #ff3b6b; text-shadow: 0 0 30px #ff3b6b80; margin: 0;
+            font-family: 'Orbitron', sans-serif; font-size: 60px; font-weight: 900;
+            color: #ff4d6d; text-shadow: 0 0 40px rgba(255,77,109,0.8); margin: 0;
+            letter-spacing: 0.02em;
         }}
         .verdict-none {{
-            font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800;
-            color: {muted}; margin: 0;
+            font-family: 'Orbitron', sans-serif; font-size: 52px; font-weight: 900;
+            color: {muted}; margin: 0; letter-spacing: 0.02em;
         }}
+
+        /* ===== SECTION HEADER ===== */
         .section-header {{
-            font-size: 11px; letter-spacing: 0.2em; color: {muted};
-            text-transform: uppercase; margin: 16px 0 12px 0;
-            padding-bottom: 8px; border-bottom: 1px solid {border};
+            font-size: 11px; letter-spacing: 0.3em; color: {color};
+            text-transform: uppercase; margin: 24px 0 14px 0;
+            padding-bottom: 10px; font-weight: 700;
+            border-bottom: 1px solid {border};
+            position: relative;
         }}
-        [data-testid="stSidebar"] {{ background: {bg}; border-right: 1px solid {border}; }}
-        .live-dot {{
-            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+        .section-header::after {{
+            content: ''; position: absolute; bottom: -1px; left: 0;
+            width: 60px; height: 2px;
             background: {color}; box-shadow: 0 0 8px {color};
-            animation: pulse 2s ease-in-out infinite; margin-right: 8px;
         }}
-        @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:0.5}} }}
+
+        /* ===== METRIC CARDS ===== */
+        [data-testid="stMetric"] {{
+            background: linear-gradient(145deg, {bg2} 0%, {bg} 100%);
+            border: 1px solid {border};
+            border-radius: 4px; padding: 16px 18px;
+            transition: all 0.2s ease;
+        }}
+        [data-testid="stMetric"]:hover {{
+            border-color: {color};
+            box-shadow: 0 0 20px rgba({glow_rgb}, 0.15);
+        }}
+        [data-testid="stMetricLabel"] {{
+            font-size: 10px !important; letter-spacing: 0.15em;
+            color: {muted} !important; text-transform: uppercase;
+        }}
+        [data-testid="stMetricValue"] {{
+            font-family: 'Syne', sans-serif !important;
+            font-size: 24px !important; font-weight: 800 !important;
+            color: {text} !important;
+        }}
+
+        /* ===== SIDEBAR ===== */
+        [data-testid="stSidebar"] {{
+            background: linear-gradient(180deg, {bg2} 0%, {bg} 100%);
+            border-right: 1px solid {border};
+        }}
+        [data-testid="stSidebar"] h3 {{
+            font-size: 13px !important; letter-spacing: 0.2em;
+            color: {color} !important;
+        }}
+
+        /* ===== INPUTS ===== */
+        [data-testid="stNumberInput"] input,
+        [data-testid="stSelectbox"] > div > div {{
+            background: {bg} !important;
+            border: 1px solid {border} !important;
+            color: {color} !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-weight: 700 !important;
+        }}
+
+        /* ===== EXPANDER ===== */
+        [data-testid="stExpander"] {{
+            border: 1px solid {border} !important;
+            border-radius: 4px;
+            background: {bg2};
+        }}
+
+        /* ===== PROGRESS BAR ===== */
+        [data-testid="stProgress"] > div > div > div {{
+            background: linear-gradient(90deg, {color_dark}, {color}) !important;
+        }}
+
+        /* ===== ALERTS ===== */
+        [data-testid="stAlert"] {{
+            border-radius: 4px;
+            border-left: 3px solid {color};
+        }}
+
+        /* ===== ANIMATIONS ===== */
+        .live-dot {{
+            display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+            background: {color}; box-shadow: 0 0 12px {color}, 0 0 4px #fff;
+            animation: pulse 1.8s ease-in-out infinite; margin-right: 8px;
+        }}
+        @keyframes pulse {{
+            0%,100%{{opacity:1; transform:scale(1)}}
+            50%{{opacity:0.4; transform:scale(0.85)}}
+        }}
+        @keyframes shimmer {{
+            0%{{background-position:-200% 0}}
+            100%{{background-position:200% 0}}
+        }}
+        @keyframes fadeIn {{
+            from{{opacity:0; transform:translateY(8px)}}
+            to{{opacity:1; transform:translateY(0)}}
+        }}
+
+        /* ===== CARD COMPONENTS ===== */
+        .hero-card {{
+            border: 1px solid {border};
+            border-radius: 6px;
+            padding: 28px 32px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.4s ease;
+        }}
+        .hero-card::before {{
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, {color}, transparent);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }}
+        .badge {{
+            display: inline-block; padding: 5px 12px;
+            font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+            border: 1px solid {border}; border-radius: 3px;
+            color: {muted}; background: {bg};
+        }}
+        .badge-live {{
+            color: {color}; border-color: {color};
+            background: rgba({glow_rgb}, 0.08);
+        }}
+        .tag-row {{
+            font-size: 11px; letter-spacing: 0.12em; color: {muted};
+            display: flex; gap: 18px; flex-wrap: wrap;
+        }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -508,10 +665,10 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
             score += 10; score_details.append("✓ ราคาเด้งแตะ EMA13 — จุดเข้าดี (+10)")
 
     # ===== Time-to-Target check (สำคัญมากสำหรับ scalp) =====
-    if minutes_to_tp <= 30:
+    if minutes_to_tp <= 15:
         score += 12
         score_details.append(f"✓ คาดถึง TP ใน {minutes_to_tp:.0f} นาที (+12)")
-    elif minutes_to_tp <= 45:
+    elif minutes_to_tp <= 25:
         score += 0
         score_details.append(f"− TP ใช้เวลา {minutes_to_tp:.0f} นาที (0)")
     else:
@@ -537,7 +694,7 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
     blocks = []
     if not direction:
         blocks.append("ไม่มีทิศทางชัด (M1 + Ribbon ไม่ตรงกัน)")
-    if minutes_to_tp > 45:
+    if minutes_to_tp > 25:
         blocks.append(f"ราคาวิ่งช้าเกิน — คาดใช้ {minutes_to_tp:.0f} นาทีถึง TP")
     if structure == "RANGE":
         blocks.append("ตลาด sideways (range) — scalp ยาก")
@@ -695,37 +852,58 @@ def main():
         st.markdown("---")
         st.caption("**SCALP MODE** — กราฟล้วน 100%")
         st.caption("ไม่ใช้ข่าว · เน้น M1/M5/M15")
-        st.caption("เป้าหมาย: ไม้ละ 5-30 นาที")
+        st.caption("เป้าหมาย: ไม้ละ 5-15 นาที")
 
     inject_css(instrument_key)
 
     # Header
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown('<div><span class="live-dot"></span>SCALP TERMINAL · PURE PRICE ACTION</div>',
+        st.markdown(
+            f'<div style="font-size:11px; letter-spacing:0.3em; margin-bottom:6px;">'
+            f'<span class="live-dot"></span>'
+            f'<span style="color:{cfg["color_primary"]}; font-weight:700;">SCALP TERMINAL</span>'
+            f'<span style="color:#666;"> · PURE PRICE ACTION</span></div>',
+            unsafe_allow_html=True)
+        st.markdown(f'<h1 class="main-title">{cfg["emoji"]} {cfg["name"]} SCALP</h1>',
                     unsafe_allow_html=True)
-        st.markdown(f'<h1 class="main-title">⚡ {cfg["name"]} SCALP</h1>', unsafe_allow_html=True)
-        st.caption("M1/M5/M15 · EMA RIBBON · VWAP · STRUCTURE · TIME-TO-TARGET")
+        st.markdown(
+            '<div class="tag-row" style="margin-top:8px;">'
+            '<span>◆ M1 / M5 / M15</span>'
+            '<span>◆ EMA RIBBON</span>'
+            '<span>◆ VWAP</span>'
+            '<span>◆ STRUCTURE</span>'
+            '<span>◆ TIME-TO-TARGET</span></div>',
+            unsafe_allow_html=True)
     with col2:
         bkk = datetime.now(timezone(timedelta(hours=7)))
         utc = datetime.now(timezone.utc)
         st.markdown(f"""
-        <div style="text-align:right; color:#8b949e; font-size:11px; margin-top:20px;">
-            <div style="color:{cfg['color_primary']}; font-weight:700;">🇹🇭 {bkk.strftime('%H:%M:%S')}</div>
-            <div>UTC {utc.strftime('%H:%M:%S')}</div>
-            <div style="opacity:0.6;">Session: {get_session()}</div>
+        <div style="text-align:right; font-size:11px; margin-top:16px;
+                    font-family:'JetBrains Mono',monospace;">
+            <div style="color:{cfg['color_primary']}; font-weight:700; font-size:18px;
+                        letter-spacing:0.1em;">🇹🇭 {bkk.strftime('%H:%M:%S')}</div>
+            <div style="color:#888; margin-top:4px;">UTC · {utc.strftime('%H:%M:%S')}</div>
+            <div style="color:#666; margin-top:4px; letter-spacing:0.1em;">
+                {get_session()}</div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06); margin:18px 0;'>",
+                unsafe_allow_html=True)
 
     if not st.button("⚡ SCAN FOR SCALP SETUP", use_container_width=True):
+        border_c = '#4a3a1f' if instrument_key == 'XAUUSD' else '#1f3a35'
         st.markdown(f"""
-        <div style="border:1px dashed {'#3d2f1f' if instrument_key=='XAUUSD' else '#30363d'};
-                    padding:50px 20px; text-align:center; color:#6e7681;">
-            <div style="font-size:32px;">⚡</div>
-            <div style="font-size:11px; letter-spacing:0.3em; margin:12px 0;">READY TO SCAN</div>
-            <div style="font-size:13px;">กดปุ่มเพื่อสแกนหา scalp setup · ใช้เวลา 3-5 วินาที</div>
+        <div style="border:1px dashed {border_c}; border-radius:6px;
+                    padding:60px 20px; text-align:center; margin-top:8px;">
+            <div style="font-size:42px; filter:drop-shadow(0 0 12px {cfg['color_primary']});">⚡</div>
+            <div style="font-size:11px; letter-spacing:0.35em; margin:14px 0 6px;
+                        color:{cfg['color_primary']}; font-weight:700;">READY TO SCAN</div>
+            <div style="font-size:13px; color:#888;">
+                กดปุ่มด้านบนเพื่อสแกนหา scalp setup</div>
+            <div style="font-size:11px; color:#555; margin-top:4px;">
+                ใช้เวลา ~3-5 วินาที · กราฟล้วน 100%</div>
         </div>
         """, unsafe_allow_html=True)
         return
@@ -764,27 +942,45 @@ def main():
     progress.empty()
 
     # ===== VERDICT =====
-    action_color = cfg['color_primary'] if r['action'] == 'BUY' else '#ff3b6b' if r['action'] == 'SELL' else '#8b949e'
+    action_color = cfg['color_primary'] if r['action'] == 'BUY' else '#ff4d6d' if r['action'] == 'SELL' else '#8b949e'
     vclass = 'verdict-buy' if r['action'] == 'BUY' else 'verdict-sell' if r['action'] == 'SELL' else 'verdict-none'
     vtext = '▲ BUY' if r['action'] == 'BUY' else '▼ SELL' if r['action'] == 'SELL' else '— NO TRADE'
+    prob_pct = r['probability'] * 100
 
     cv1, cv2 = st.columns([2, 3])
     with cv1:
         st.markdown(f"""
-        <div style="border:2px solid {action_color}; padding:28px;
-                    background:linear-gradient(135deg, {action_color}15 0%, transparent 60%);">
-            <div style="font-size:11px; letter-spacing:0.3em; color:#8b949e;">SCALP VERDICT</div>
+        <div class="hero-card" style="border-color:{action_color};
+             background:linear-gradient(150deg, {action_color}1a 0%, transparent 65%);">
+            <div style="font-size:10px; letter-spacing:0.35em; color:{cfg['color_primary']};
+                        font-weight:700; margin-bottom:8px;">⚡ SCALP VERDICT</div>
             <div class="{vclass}">{vtext}</div>
-            <div style="font-size:12px; color:#8b949e; margin-top:10px;">
-                SCORE: {r['score']:.0f} · PROB: {r['probability']*100:.0f}%
+            <div style="margin-top:18px;">
+                <div style="display:flex; justify-content:space-between;
+                            font-size:10px; letter-spacing:0.15em; color:#999;
+                            margin-bottom:6px;">
+                    <span>PROBABILITY</span><span style="color:{action_color};
+                          font-weight:700;">{prob_pct:.0f}%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.08);
+                            border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:{prob_pct:.0f}%;
+                                background:linear-gradient(90deg, {cfg['color_secondary']}, {action_color});
+                                box-shadow:0 0 10px {action_color};"></div>
+                </div>
+                <div style="font-size:10px; letter-spacing:0.15em; color:#777;
+                            margin-top:10px;">CONFLUENCE SCORE: <span style="color:{action_color};
+                            font-weight:700;">{r['score']:.0f}</span></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     with cv2:
-        st.markdown('<div class="section-header">เหตุผล</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">เหตุผล / REASONING</div>', unsafe_allow_html=True)
         for reason in r['reasons']:
-            icon = "✗" if r['action'] == 'NO_TRADE' else "✓"
-            st.markdown(f"- {icon} {reason}")
+            icon = "🔴" if r['action'] == 'NO_TRADE' else "🟢"
+            st.markdown(f"""<div style="padding:8px 0; font-size:13px;
+                         border-bottom:1px solid rgba(255,255,255,0.05);">
+                         {icon}&nbsp;&nbsp;{reason}</div>""", unsafe_allow_html=True)
 
     # ===== TRADE DETAILS =====
     if r['action'] != 'NO_TRADE':
