@@ -44,13 +44,13 @@ INSTRUMENTS = {
     "XAUUSD": {
         "name": "GOLD", "symbol": "XAU/USD", "yf_symbol": "GC=F",
         "ounces_per_lot": 100, "typical_spread": 0.20,
-        "color_primary": "#ffd700", "color_secondary": "#b8860b",
+        "color_primary": "#f4c542", "color_secondary": "#a87f2c",
         "emoji": "🥇",
     },
     "XAGUSD": {
         "name": "SILVER", "symbol": "XAG/USD", "yf_symbol": "SI=F",
         "ounces_per_lot": 5000, "typical_spread": 0.025,
-        "color_primary": "#00ff9f", "color_secondary": "#00b87a",
+        "color_primary": "#d8dde6", "color_secondary": "#8b95a3",
         "emoji": "🥈",
     },
 }
@@ -65,21 +65,21 @@ def inject_css(instrument_key):
     color_dark = cfg["color_secondary"]
 
     if instrument_key == "XAUUSD":
-        bg = "#0d0a05"
-        bg2 = "#1a1308"
+        bg = "#100c06"
+        bg2 = "#1c1610"
         border = "#4a3a1f"
         text = "#f7ecd9"
         muted = "#9c8560"
-        glow_rgb = "255, 215, 0"
+        glow_rgb = "244, 197, 66"
         accent_soft = "#3d2f15"
     else:
-        bg = "#04080c"
-        bg2 = "#0a1118"
-        border = "#1f3a35"
-        text = "#e8f5f0"
-        muted = "#7da99c"
-        glow_rgb = "0, 255, 159"
-        accent_soft = "#0d2a24"
+        bg = "#0c0e12"
+        bg2 = "#161a21"
+        border = "#2e343f"
+        text = "#eef1f5"
+        muted = "#8b95a3"
+        glow_rgb = "216, 221, 230"
+        accent_soft = "#22272f"
 
     st.markdown(f"""
     <style>
@@ -106,18 +106,17 @@ def inject_css(instrument_key):
         /* ===== BUTTON ===== */
         .stButton > button {{
             background: linear-gradient(135deg, {color} 0%, {color_dark} 100%);
-            color: #000; border: none; padding: 16px 24px;
+            color: #0a0a0a; border: none; padding: 16px 24px;
             font-family: 'Syne', sans-serif; font-weight: 800;
             font-size: 15px; letter-spacing: 0.25em; text-transform: uppercase;
-            border-radius: 2px;
-            box-shadow: 0 0 30px rgba({glow_rgb}, 0.4),
-                        inset 0 1px 0 rgba(255,255,255,0.3);
+            border-radius: 3px;
+            box-shadow: 0 4px 24px rgba({glow_rgb}, 0.35),
+                        inset 0 1px 0 rgba(255,255,255,0.4);
             width: 100%; transition: all 0.25s ease;
-            position: relative; overflow: hidden;
         }}
         .stButton > button:hover {{
-            box-shadow: 0 0 50px rgba({glow_rgb}, 0.7),
-                        inset 0 1px 0 rgba(255,255,255,0.4);
+            box-shadow: 0 6px 36px rgba({glow_rgb}, 0.55),
+                        inset 0 1px 0 rgba(255,255,255,0.5);
             transform: translateY(-2px);
         }}
         .stButton > button:active {{ transform: translateY(0); }}
@@ -125,12 +124,19 @@ def inject_css(instrument_key):
         /* ===== TITLE ===== */
         .main-title {{
             font-family: 'Orbitron', sans-serif !important;
-            font-size: 52px !important; font-weight: 900 !important;
+            font-size: 54px !important; font-weight: 900 !important;
             margin: 0 !important; line-height: 1 !important;
-            letter-spacing: 0.02em;
-            background: linear-gradient(135deg, #fff 0%, {color} 40%, {color_dark} 100%);
+            letter-spacing: 0.03em;
+            background: linear-gradient(135deg,
+                #ffffff 0%, {color} 35%, {color_dark} 70%, {color} 100%);
+            background-size: 200% auto;
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 25px rgba({glow_rgb}, 0.5));
+            filter: drop-shadow(0 2px 12px rgba({glow_rgb}, 0.4));
+            animation: shine 6s linear infinite;
+        }}
+        @keyframes shine {{
+            0%{{background-position:0% center}}
+            100%{{background-position:200% center}}
         }}
 
         /* ===== VERDICT ===== */
