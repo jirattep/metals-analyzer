@@ -558,10 +558,13 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
     result['spread_ratio'] = spread_ratio
 
     # ===== Pullback detection =====
-    # ราคาอยู่ใกล้ EMA13 ไหม (โซน entry ที่ดี)
+    # ราคาอยู่ใกล้ EMA13 ไหม (โซน entry ที่ดี = รอย่อ ไม่ไล่ราคา)
     dist_to_ema13 = abs(current - e13) / current
-    is_pullback_zone = dist_to_ema13 < 0.0008  # ภายใน 0.08%
+    is_pullback_zone = dist_to_ema13 < 0.0012  # ภายใน 0.12% = ถือว่าย่อมาใกล้แล้ว
+    # ราคาห่าง EMA13 มากเกินไป = กำลังไล่ราคา (เสี่ยงเข้าปลายคลื่น)
+    is_chasing = dist_to_ema13 > 0.0030  # ห่างเกิน 0.30% = ไล่ราคา
     result['is_pullback_zone'] = is_pullback_zone
+    result['is_chasing'] = is_chasing
     result['dist_to_ema13_pct'] = dist_to_ema13 * 100
 
     # ============================================================
@@ -609,13 +612,13 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
         elif last_hist < 0:
             score -= 8; score_details.append("✗ MACD ลบ (-8)")
 
-        # RSI — scalp ต้องไม่ overbought
-        if 45 < last_rsi < 68:
+        # RSI — scalp ต้องไม่เข้าใกล้ยอด/ก้น
+        if 48 < last_rsi < 62:
             score += 8; score_details.append(f"✓ RSI {last_rsi:.0f} โซนดี (+8)")
-        elif last_rsi >= 72:
-            score -= 12; score_details.append(f"✗ RSI {last_rsi:.0f} overbought (-12)")
-        elif last_rsi <= 35:
-            score -= 6; score_details.append(f"− RSI {last_rsi:.0f} อ่อนแอ (-6)")
+        elif last_rsi >= 62:
+            score -= 14; score_details.append(f"✗ RSI {last_rsi:.0f} สูงเกิน เสี่ยงยอด (-14)")
+        elif last_rsi <= 42:
+            score -= 8; score_details.append(f"− RSI {last_rsi:.0f} อ่อนแอ ยังไม่ควร BUY (-8)")
 
         # VWAP
         if result['above_vwap']:
@@ -655,12 +658,12 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
         elif last_hist > 0:
             score -= 8; score_details.append("✗ MACD บวก (-8)")
 
-        if 32 < last_rsi < 55:
+        if 38 < last_rsi < 52:
             score += 8; score_details.append(f"✓ RSI {last_rsi:.0f} โซนดี (+8)")
-        elif last_rsi <= 28:
-            score -= 12; score_details.append(f"✗ RSI {last_rsi:.0f} oversold (-12)")
-        elif last_rsi >= 65:
-            score -= 6; score_details.append(f"− RSI {last_rsi:.0f} แข็งเกิน (-6)")
+        elif last_rsi <= 38:
+            score -= 14; score_details.append(f"✗ RSI {last_rsi:.0f} ต่ำเกิน เสี่ยงเด้ง (-14)")
+        elif last_rsi >= 58:
+            score -= 8; score_details.append(f"− RSI {last_rsi:.0f} แข็งเกิน ยังไม่ควร SELL (-8)")
 
         if not result['above_vwap']:
             score += 8; score_details.append("✓ ใต้ VWAP (+8)")
@@ -710,10 +713,18 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
         blocks.append("M15 ขาลง — ไม่ควร BUY สวนเทรนด์")
     if direction == "SELL" and m15_trend == "UP":
         blocks.append("M15 ขาขึ้น — ไม่ควร SELL สวนเทรนด์")
-    if direction == "BUY" and last_rsi >= 72:
-        blocks.append(f"RSI {last_rsi:.0f} overbought — เสี่ยงย่อ")
-    if direction == "SELL" and last_rsi <= 28:
-        blocks.append(f"RSI {last_rsi:.0f} oversold — เสี่ยงเด้ง")
+    if direction == "BUY" and last_rsi >= 62:
+        blocks.append(f"RSI {last_rsi:.0f} สูงเกิน (≥62) — เสี่ยงเข้าใกล้ยอด")
+    if direction == "SELL" and last_rsi <= 38:
+        blocks.append(f"RSI {last_rsi:.0f} ต่ำเกิน (≤38) — เสี่ยงเข้าใกล้ก้น เด้งสวน")
+    # รอย่อ: ราคาห่าง EMA13 มากไป = กำลังไล่ราคา
+    if direction and is_chasing:
+        blocks.append(f"ราคาห่าง EMA13 {dist_to_ema13*100:.2f}% — กำลังไล่ราคา ควรรอย่อก่อน")
+    # SL แคบเกินเทียบความผันผวน (ATR M1) → โดน noise เด้งโดน SL ง่าย
+    sl_distance = settings['sl_usd'] / usd_per_move if usd_per_move > 0 else 0
+    result['sl_distance'] = sl_distance
+    if sl_distance > 0 and last_atr_m1 > 0 and sl_distance < last_atr_m1 * 2.5:
+        blocks.append(f"SL แคบเกิน (${sl_distance:.2f}) เทียบ ATR M1 (${last_atr_m1:.2f}) — ราคาเหวี่ยงโดน SL ง่าย")
     if prob < 0.58:
         blocks.append(f"Probability {prob*100:.0f}% ต่ำกว่า 58%")
     if result['ev'] < 0:
@@ -1048,6 +1059,20 @@ def main():
               help="ระยะที่ราคาต้องวิ่ง")
     v4.metric("Spread กิน", f"{r['spread_ratio']*100:.0f}%",
               help="spread คิดเป็น % ของ TP")
+
+    v5, v6, v7, v8 = st.columns(4)
+    ema_status = "✓ ย่อมาแล้ว" if r['is_pullback_zone'] else ("⚠ ไล่ราคา" if r.get('is_chasing') else "กลางๆ")
+    v5.metric("ระยะห่าง EMA13", f"{r['dist_to_ema13_pct']:.2f}%", ema_status,
+              help="ราคาห่างจาก EMA13 — ใกล้=ดี (รอย่อ), ไกล=ไล่ราคา")
+    sl_dist = r.get('sl_distance', 0)
+    v6.metric("SL Distance", f"${sl_dist:.3f}",
+              "พอ" if sl_dist >= r['atr_m1'] * 2.5 else "⚠ แคบ",
+              help="ระยะ SL — ควร ≥ 2.5x ATR M1 กัน noise")
+    v7.metric("ATR x2.5", f"${r['atr_m1']*2.5:.3f}",
+              help="SL ควรกว้างกว่านี้")
+    v8.metric("RSI M5", f"{r['rsi_m5']:.0f}",
+              "โซนดี" if 38 < r['rsi_m5'] < 62 else "⚠ ขอบเขต",
+              help="48-62 = BUY ดี, 38-52 = SELL ดี")
 
     # ===== CHART =====
     st.markdown('<div class="section-header">M5 CHART · EMA RIBBON + VWAP</div>', unsafe_allow_html=True)
