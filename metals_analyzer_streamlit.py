@@ -1,12 +1,12 @@
 """
 SCALP ANALYZER - Pure Price Action Edition
 ============================================
-XAU/USD และ XAG/USD Scalping Analyzer (5-15 นาที/ไม้)
+XAU/USD และ XAG/USD Scalping Analyzer (5-20 นาที/ไม้)
 
 หลักการ:
 - กราฟล้วน 100% — ไม่ใช้ข่าว, ไม่ใช้ sentiment
 - เน้น M1/M5/M15 (scalping timeframes)
-- Time-to-Target — ประเมินว่าราคาถึง TP ใน 15 นาทีไหม
+- Time-to-Target — ประเมินว่าราคาถึง TP ใน 20 นาทีไหม
 - Pullback entry — เข้าตอนราคาย่อ ไม่ไล่ราคา
 - EMA Ribbon + VWAP + Micro structure
 
@@ -674,10 +674,10 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
             score += 10; score_details.append("✓ ราคาเด้งแตะ EMA13 — จุดเข้าดี (+10)")
 
     # ===== Time-to-Target check (สำคัญมากสำหรับ scalp) =====
-    if minutes_to_tp <= 15:
+    if minutes_to_tp <= 20:
         score += 12
         score_details.append(f"✓ คาดถึง TP ใน {minutes_to_tp:.0f} นาที (+12)")
-    elif minutes_to_tp <= 25:
+    elif minutes_to_tp <= 35:
         score += 0
         score_details.append(f"− TP ใช้เวลา {minutes_to_tp:.0f} นาที (0)")
     else:
@@ -703,7 +703,7 @@ def analyze_scalp(m1, m5, m15, cfg, settings):
     blocks = []
     if not direction:
         blocks.append("ไม่มีทิศทางชัด (M1 + Ribbon ไม่ตรงกัน)")
-    if minutes_to_tp > 25:
+    if minutes_to_tp > 35:
         blocks.append(f"ราคาวิ่งช้าเกิน — คาดใช้ {minutes_to_tp:.0f} นาทีถึง TP")
     if structure == "RANGE":
         blocks.append("ตลาด sideways (range) — scalp ยาก")
@@ -878,7 +878,7 @@ def main():
         st.markdown("---")
         st.caption("**SCALP MODE** — กราฟล้วน 100%")
         st.caption("ไม่ใช้ข่าว · เน้น M1/M5/M15")
-        st.caption("เป้าหมาย: ไม้ละ 5-15 นาที")
+        st.caption("เป้าหมาย: ไม้ละ 5-20 นาที")
 
     inject_css(instrument_key)
 
