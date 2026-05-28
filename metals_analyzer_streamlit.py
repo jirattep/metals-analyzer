@@ -850,6 +850,15 @@ def main():
         sl_usd = st.number_input("SL (USD)", value=20.0, step=5.0)
 
         st.markdown("---")
+        st.markdown("### 🎯 CALIBRATE")
+        st.caption("ปรับราคาให้ตรง Exness (futures vs spot ต่างกันนิดหน่อย)")
+        spot_price = st.number_input(
+            f"ราคา {cfg['symbol']} ปัจจุบันใน Exness",
+            value=0.0, step=0.01, format="%.2f",
+            help="กรอกราคาที่เห็นใน Exness ตอนนี้ ระบบจะปรับราคา Yahoo ให้ตรง (กรอก 0 = ไม่ปรับ)"
+        )
+
+        st.markdown("---")
         st.caption(f"💡 1 lot = {ounces_per_lot} oz")
         usd_per_move = lot_size * ounces_per_lot
         if usd_per_move > 0:
@@ -935,11 +944,25 @@ def main():
     if m1 is m5:
         st.toast("⚠ M1 ไม่พร้อม — ใช้ M5 แทน (ผลวิเคราะห์ยังใช้ได้)", icon="⚠️")
 
+    # ===== SPOT CALIBRATION — ปรับราคา futures ให้ตรง spot (Exness) =====
+    offset = 0.0
+    yahoo_price = float(m5['Close'].iloc[-1])
+    if spot_price and spot_price > 0:
+        offset = spot_price - yahoo_price
+        # ปรับ OHLC ทุก timeframe ด้วย offset
+        for df in [m1, m5, m15]:
+            for col in ['Open', 'High', 'Low', 'Close']:
+                if col in df.columns:
+                    df[col] = df[col] + offset
+        st.toast(f"✓ ปรับราคาแล้ว: Yahoo ${yahoo_price:.2f} → Spot ${spot_price:.2f} (offset {offset:+.2f})", icon="🎯")
+
     progress.progress(60, text="🧮 Analyzing price action...")
     settings = {'lot_size': lot_size, 'ounces_per_lot': ounces_per_lot,
                 'tp_usd': tp_usd, 'sl_usd': sl_usd}
     try:
         r = analyze_scalp(m1, m5, m15, cfg, settings)
+        r['offset'] = offset
+        r['yahoo_price'] = yahoo_price
     except Exception as e:
         st.error(f"❌ Analysis error: {e}")
         return
@@ -1001,7 +1024,8 @@ def main():
     # ===== KEY METRICS =====
     st.markdown('<div class="section-header">PRICE ACTION SNAPSHOT</div>', unsafe_allow_html=True)
     m_c1, m_c2, m_c3, m_c4 = st.columns(4)
-    m_c1.metric("PRICE", f"${r['current_price']:.2f}")
+    m_c1.metric("PRICE", f"${r['current_price']:.2f}",
+                f"calibrated {r['offset']:+.2f}" if r.get('offset') else "Yahoo futures")
     m_c2.metric("M15 TREND", r['m15_trend'])
     m_c3.metric("EMA RIBBON", r['ribbon'])
     m_c4.metric("STRUCTURE", r['structure'])
