@@ -838,13 +838,13 @@ def main():
 
         st.markdown("---")
         st.markdown("### 📊 POSITION")
-        lot_size = st.number_input("Lot Size", value=0.01, step=0.01, format="%.2f")
-        ounces_per_lot = st.number_input("Oz / Lot", value=cfg['ounces_per_lot'], step=10)
-        tp_usd = st.number_input("TP (USD)", value=20.0, step=5.0)
-        sl_usd = st.number_input("SL (USD)", value=20.0, step=5.0)
+        lot_size = st.number_input("ขนาดล็อต", value=0.02, min_value=0.02, step=0.01, format="%.2f")
+        ounces_per_lot = st.number_input("ออนซ์ต่อล็อต", value=cfg['ounces_per_lot'], step=10)
+        tp_usd = st.number_input("เป้ากำไร TP (USD)", value=20.0, step=5.0)
+        sl_usd = st.number_input("ตัดขาดทุน SL (USD)", value=20.0, step=5.0)
 
         st.markdown("---")
-        st.markdown("### 🎯 CALIBRATE")
+        st.markdown("### 🎯 ปรับราคา (Calibrate)")
         st.caption("ปรับราคาให้ตรง Exness (futures vs spot ต่างกันนิดหน่อย)")
         spot_price = st.number_input(
             f"ราคา {cfg['symbol']} ปัจจุบันใน Exness",
@@ -859,7 +859,7 @@ def main():
             st.caption(f"⚡ TP distance: ${tp_usd/usd_per_move:.3f}/oz")
         st.caption(f"📏 Typical spread: ${cfg['typical_spread']}/oz")
         st.markdown("---")
-        st.caption("**SCALP MODE** — กราฟล้วน 100%")
+        st.caption("**โหมดสแคลป์** — กราฟล้วน 100%")
         st.caption("ไม่ใช้ข่าว · เน้น M1/M5/M15")
         st.caption("เป้าหมาย: ไม้ละ 5-20 นาที")
 
@@ -871,18 +871,18 @@ def main():
         st.markdown(
             f'<div style="font-size:11px; letter-spacing:0.3em; margin-bottom:6px;">'
             f'<span class="live-dot"></span>'
-            f'<span style="color:{cfg["color_primary"]}; font-weight:700;">SCALP TERMINAL</span>'
-            f'<span style="color:#666;"> · PURE PRICE ACTION</span></div>',
+            f'<span style="color:{cfg["color_primary"]}; font-weight:700;">เครื่องวิเคราะห์สแคลป์</span>'
+            f'<span style="color:#666;"> · วิเคราะห์จากกราฟล้วน</span></div>',
             unsafe_allow_html=True)
         st.markdown(f'<h1 class="main-title">{cfg["emoji"]} {cfg["name"]} SCALP</h1>',
                     unsafe_allow_html=True)
         st.markdown(
             '<div class="tag-row" style="margin-top:8px;">'
             '<span>◆ M1 / M5 / M15</span>'
-            '<span>◆ EMA RIBBON</span>'
+            '<span>◆ EMA Ribbon</span>'
             '<span>◆ VWAP</span>'
-            '<span>◆ STRUCTURE</span>'
-            '<span>◆ TIME-TO-TARGET</span></div>',
+            '<span>◆ โครงสร้างราคา</span>'
+            '<span>◆ คาดเวลาถึง TP</span></div>',
             unsafe_allow_html=True)
     with col2:
         bkk = datetime.now(timezone(timedelta(hours=7)))
@@ -894,31 +894,31 @@ def main():
                         letter-spacing:0.1em;">🇹🇭 {bkk.strftime('%H:%M:%S')}</div>
             <div style="color:#888; margin-top:4px;">UTC · {utc.strftime('%H:%M:%S')}</div>
             <div style="color:#666; margin-top:4px; letter-spacing:0.1em;">
-                {get_session()}</div>
+                ช่วงตลาด: {get_session()}</div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06); margin:18px 0;'>",
                 unsafe_allow_html=True)
 
-    if not st.button("⚡ SCAN FOR SCALP SETUP", use_container_width=True):
+    if not st.button("⚡ สแกนหาจังหวะเทรด", use_container_width=True):
         border_c = '#4a3a1f' if instrument_key == 'XAUUSD' else '#1f3a35'
         st.markdown(f"""
         <div style="border:1px dashed {border_c}; border-radius:6px;
                     padding:60px 20px; text-align:center; margin-top:8px;">
             <div style="font-size:42px; filter:drop-shadow(0 0 12px {cfg['color_primary']});">⚡</div>
             <div style="font-size:11px; letter-spacing:0.35em; margin:14px 0 6px;
-                        color:{cfg['color_primary']}; font-weight:700;">READY TO SCAN</div>
+                        color:{cfg['color_primary']}; font-weight:700;">พร้อมสแกน</div>
             <div style="font-size:13px; color:#888;">
-                กดปุ่มด้านบนเพื่อสแกนหา scalp setup</div>
+                กดปุ่มด้านบนเพื่อค้นหาจังหวะเข้าเทรด</div>
             <div style="font-size:11px; color:#555; margin-top:4px;">
-                ใช้เวลา ~3-5 วินาที · กราฟล้วน 100%</div>
+                ใช้เวลา ~3-5 วินาที · วิเคราะห์จากกราฟ 100%</div>
         </div>
         """, unsafe_allow_html=True)
         return
 
     # Execute
-    progress = st.progress(0, text="📊 Fetching M1/M5/M15...")
+    progress = st.progress(0, text="📊 กำลังดึงข้อมูลกราฟ M1/M5/M15...")
     m1, m5, m15 = fetch_scalp_data(cfg['yf_symbol'])
 
     if m5 is None or len(m5) < 30:
@@ -948,9 +948,9 @@ def main():
             for col in ['Open', 'High', 'Low', 'Close']:
                 if col in df.columns:
                     df[col] = df[col] + offset
-        st.toast(f"✓ ปรับราคาแล้ว: Yahoo ${yahoo_price:.2f} → Spot ${spot_price:.2f} (offset {offset:+.2f})", icon="🎯")
+        st.toast(f"✓ ปรับราคาแล้ว: Yahoo ${yahoo_price:.2f} → Exness ${spot_price:.2f} (ปรับ {offset:+.2f})", icon="🎯")
 
-    progress.progress(60, text="🧮 Analyzing price action...")
+    progress.progress(60, text="🧮 กำลังวิเคราะห์การเคลื่อนไหวราคา...")
     settings = {'lot_size': lot_size, 'ounces_per_lot': ounces_per_lot,
                 'tp_usd': tp_usd, 'sl_usd': sl_usd}
     try:
@@ -961,13 +961,13 @@ def main():
         st.error(f"❌ Analysis error: {e}")
         return
 
-    progress.progress(100, text="✓ Done")
+    progress.progress(100, text="✓ เสร็จแล้ว")
     progress.empty()
 
     # ===== VERDICT =====
     action_color = cfg['color_primary'] if r['action'] == 'BUY' else '#ff4d6d' if r['action'] == 'SELL' else '#8b949e'
     vclass = 'verdict-buy' if r['action'] == 'BUY' else 'verdict-sell' if r['action'] == 'SELL' else 'verdict-none'
-    vtext = '▲ BUY' if r['action'] == 'BUY' else '▼ SELL' if r['action'] == 'SELL' else '— NO TRADE'
+    vtext = '▲ ซื้อ (BUY)' if r['action'] == 'BUY' else '▼ ขาย (SELL)' if r['action'] == 'SELL' else '— ยังไม่เทรด'
     prob_pct = r['probability'] * 100
 
     cv1, cv2 = st.columns([2, 3])
@@ -976,13 +976,13 @@ def main():
         <div class="hero-card" style="border-color:{action_color};
              background:linear-gradient(150deg, {action_color}1a 0%, transparent 65%);">
             <div style="font-size:10px; letter-spacing:0.35em; color:{cfg['color_primary']};
-                        font-weight:700; margin-bottom:8px;">⚡ SCALP VERDICT</div>
+                        font-weight:700; margin-bottom:8px;">⚡ ผลการวิเคราะห์</div>
             <div class="{vclass}">{vtext}</div>
             <div style="margin-top:18px;">
                 <div style="display:flex; justify-content:space-between;
                             font-size:10px; letter-spacing:0.15em; color:#999;
                             margin-bottom:6px;">
-                    <span>PROBABILITY</span><span style="color:{action_color};
+                    <span>ความน่าจะเป็น</span><span style="color:{action_color};
                           font-weight:700;">{prob_pct:.0f}%</span>
                 </div>
                 <div style="height:6px; background:rgba(255,255,255,0.08);
@@ -992,13 +992,13 @@ def main():
                                 box-shadow:0 0 10px {action_color};"></div>
                 </div>
                 <div style="font-size:10px; letter-spacing:0.15em; color:#777;
-                            margin-top:10px;">CONFLUENCE SCORE: <span style="color:{action_color};
+                            margin-top:10px;">คะแนนรวม: <span style="color:{action_color};
                             font-weight:700;">{r['score']:.0f}</span></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     with cv2:
-        st.markdown('<div class="section-header">เหตุผล / REASONING</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">เหตุผล</div>', unsafe_allow_html=True)
         for reason in r['reasons']:
             icon = "🔴" if r['action'] == 'NO_TRADE' else "🟢"
             st.markdown(f"""<div style="padding:8px 0; font-size:13px;
@@ -1007,68 +1007,80 @@ def main():
 
     # ===== TRADE DETAILS =====
     if r['action'] != 'NO_TRADE':
-        st.markdown('<div class="section-header">TRADE SETUP</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">ตั้งออเดอร์</div>', unsafe_allow_html=True)
         c1, c2, c3, c4, c5 = st.columns(5)
-        c1.metric("ENTRY", f"${r['entry']:.2f}")
-        c2.metric("TAKE PROFIT", f"${r['tp']:.2f}", f"+${tp_usd:.0f}")
-        c3.metric("STOP LOSS", f"${r['sl']:.2f}", f"-${sl_usd:.0f}", delta_color="inverse")
+        c1.metric("ราคาเข้า", f"${r['entry']:.2f}")
+        c2.metric("เป้ากำไร (TP)", f"${r['tp']:.2f}", f"+${tp_usd:.0f}")
+        c3.metric("จุดตัดขาดทุน (SL)", f"${r['sl']:.2f}", f"-${sl_usd:.0f}", delta_color="inverse")
         c4.metric("คาดถึง TP", f"~{r['minutes_to_tp']:.0f} นาที")
-        c5.metric("PROBABILITY", f"{r['probability']*100:.0f}%")
+        c5.metric("ความน่าจะเป็น", f"{r['probability']*100:.0f}%")
 
     # ===== KEY METRICS =====
-    st.markdown('<div class="section-header">PRICE ACTION SNAPSHOT</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">สภาพตลาด</div>', unsafe_allow_html=True)
     m_c1, m_c2, m_c3, m_c4 = st.columns(4)
-    m_c1.metric("PRICE", f"${r['current_price']:.2f}",
-                f"calibrated {r['offset']:+.2f}" if r.get('offset') else "Yahoo futures")
-    m_c2.metric("M15 TREND", r['m15_trend'])
-    m_c3.metric("EMA RIBBON", r['ribbon'])
-    m_c4.metric("STRUCTURE", r['structure'])
+    m_c1.metric("ราคา", f"${r['current_price']:.2f}",
+                f"ปรับแล้ว {r['offset']:+.2f}" if r.get('offset') else "Yahoo futures")
+    # Helper: แปลเทรนด์เป็นไทย
+    trend_th = {
+        "UP": "↗ ขาขึ้น", "DOWN": "↘ ขาลง", "SIDEWAYS": "→ ไซด์เวย์",
+        "BULL": "↗ ขาขึ้น", "BEAR": "↘ ขาลง", "MIXED": "→ ไม่ชัด",
+        "UPTREND": "↗ ขาขึ้น (HH-HL)", "DOWNTREND": "↘ ขาลง (LH-LL)", "RANGE": "→ ไซด์เวย์",
+        "BULLISH": "↗ ขาขึ้น", "BEARISH": "↘ ขาลง", "NEUTRAL": "→ กลางๆ",
+    }
+    signal_th = {
+        "BULL_CROSS": "↗ ตัดขึ้น", "BEAR_CROSS": "↘ ตัดลง",
+        "ABOVE_EMA": "↗ เหนือ EMA", "BELOW_EMA": "↘ ใต้ EMA",
+    }
+
+    m_c2.metric("เทรนด์ M15", trend_th.get(r['m15_trend'], r['m15_trend']))
+    m_c3.metric("EMA Ribbon", trend_th.get(r['ribbon'], r['ribbon']))
+    m_c4.metric("โครงสร้าง", trend_th.get(r['structure'], r['structure']))
 
     m_d1, m_d2, m_d3, m_d4 = st.columns(4)
-    m_d1.metric("M1 SIGNAL", r['m1_signal'])
+    m_d1.metric("สัญญาณ M1", signal_th.get(r['m1_signal'], r['m1_signal']))
     m_d2.metric("RSI M5", f"{r['rsi_m5']:.0f}")
-    vwap_status = "ABOVE ✓" if r['above_vwap'] else "BELOW ✗"
-    m_d3.metric("VS VWAP", vwap_status)
-    m_d4.metric("MACD HIST", f"{r['macd_hist']:.4f}",
-                "rising" if r['macd_rising'] else "falling")
+    vwap_status = "เหนือ VWAP ✓" if r['above_vwap'] else "ใต้ VWAP ✗"
+    m_d3.metric("ตำแหน่ง VWAP", vwap_status)
+    m_d4.metric("MACD", f"{r['macd_hist']:.4f}",
+                "กำลังเร่งขึ้น" if r['macd_rising'] else "กำลังเร่งลง")
 
     # ===== VELOCITY =====
-    st.markdown('<div class="section-header">⚡ SCALP METRICS — VELOCITY & TIMING</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">⚡ ความเร็ว · เวลา · ความผันผวน</div>', unsafe_allow_html=True)
     v1, v2, v3, v4 = st.columns(4)
-    v1.metric("ATR M1", f"${r['atr_m1']:.3f}", help="ความผันผวนต่อนาที")
-    v2.metric("Recent Velocity", f"${r['recent_velocity']:.3f}/min",
+    v1.metric("ATR M1", f"${r['atr_m1']:.3f}", help="ความผันผวนเฉลี่ยต่อนาที")
+    v2.metric("ความเร็วล่าสุด", f"${r['recent_velocity']:.3f}/นาที",
               help="ความเร็วราคา 5 นาทีล่าสุด")
-    v3.metric("TP Distance", f"${r['tp_distance']:.3f}",
-              help="ระยะที่ราคาต้องวิ่ง")
+    v3.metric("ระยะถึง TP", f"${r['tp_distance']:.3f}",
+              help="ราคาต้องวิ่งกี่ดอลลาร์ถึง TP")
     v4.metric("Spread กิน", f"{r['spread_ratio']*100:.0f}%",
-              help="spread คิดเป็น % ของ TP")
+              help="spread คิดเป็น % ของกำไร TP")
 
     v5, v6, v7, v8 = st.columns(4)
     ema_status = "✓ ย่อมาแล้ว" if r['is_pullback_zone'] else ("⚠ ไล่ราคา" if r.get('is_chasing') else "กลางๆ")
-    v5.metric("ระยะห่าง EMA13", f"{r['dist_to_ema13_pct']:.2f}%", ema_status,
+    v5.metric("ห่างจาก EMA13", f"{r['dist_to_ema13_pct']:.2f}%", ema_status,
               help="ราคาห่างจาก EMA13 — ใกล้=ดี (รอย่อ), ไกล=ไล่ราคา (block >0.45%)")
     sl_dist = r.get('sl_distance', 0)
-    v6.metric("SL Distance", f"${sl_dist:.3f}",
-              "พอ" if sl_dist >= r['atr_m1'] * 1.8 else "⚠ แคบ",
-              help="ระยะ SL — ควร ≥ 1.8x ATR M1 กัน noise")
+    v6.metric("ระยะ SL", f"${sl_dist:.3f}",
+              "พอ" if sl_dist >= r['atr_m1'] * 1.8 else "⚠ แคบไป",
+              help="ระยะ SL ควร ≥ 1.8x ATR M1 เพื่อกัน noise")
     v7.metric("ATR x1.8", f"${r['atr_m1']*1.8:.3f}",
-              help="SL ควรกว้างกว่านี้")
+              help="SL ควรกว้างอย่างน้อยเท่านี้")
     v8.metric("RSI M5", f"{r['rsi_m5']:.0f}",
               "โซนดี" if 35 < r['rsi_m5'] < 65 else "⚠ ขอบเขต",
-              help="45-65 = BUY ดี, 35-55 = SELL ดี")
+              help="ซื้อดีที่ 45-65 · ขายดีที่ 35-55")
 
     # ===== CHART =====
-    st.markdown('<div class="section-header">M5 CHART · EMA RIBBON + VWAP</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">กราฟ M5 · EMA Ribbon + VWAP</div>', unsafe_allow_html=True)
     st.plotly_chart(make_scalp_chart(m5, cfg, r), use_container_width=True)
 
     # ===== SCORE BREAKDOWN =====
-    with st.expander("🔍 ดูรายละเอียดการให้คะแนน (Score Breakdown)"):
+    with st.expander("🔍 ดูรายละเอียดการให้คะแนน"):
         for detail in r['score_details']:
             st.markdown(f"- {detail}")
-        st.markdown(f"**รวม: {r['score']:.0f} คะแนน → Probability {r['probability']*100:.0f}%**")
+        st.markdown(f"**รวม: {r['score']:.0f} คะแนน → ความน่าจะเป็น {r['probability']*100:.0f}%**")
 
     st.markdown("---")
-    st.caption("⚡ SCALP MODE · PURE PRICE ACTION · NO NEWS · FOR EDUCATIONAL USE ONLY")
+    st.caption("⚡ โหมดสแคลป์ · วิเคราะห์จากกราฟล้วน · ไม่ใช้ข่าว · เพื่อการศึกษาเท่านั้น")
 
 
 if __name__ == "__main__":
